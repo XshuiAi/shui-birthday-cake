@@ -1,0 +1,27 @@
+export const SPONGES=[{id:'vanilla',name:'香草戚风',color:'#e5bd7f'},{id:'cocoa',name:'可可海绵',color:'#80513c'},{id:'matcha',name:'抹茶蛋糕',color:'#a3b56c'},{id:'strawberry',name:'草莓蛋糕',color:'#e8a7ba'},{id:'redvelvet',name:'红丝绒',color:'#b86163'},{id:'taro',name:'香芋蛋糕',color:'#b9a2cf'}];
+export const FILLINGS=[{id:'cream',name:'鲜奶油',color:'#fff2d8'},{id:'strawberry',name:'草莓果酱',color:'#cc6c7b'},{id:'chocolate',name:'巧克力',color:'#71452f'},{id:'blueberry',name:'蓝莓果酱',color:'#856399'},{id:'mango',name:'芒果果酱',color:'#f4c061'},{id:'lemon',name:'香草卡仕达',color:'#ecc865'}];
+export const CREAMS=['#fff2dd','#e9a7b5','#b5c6a0','#b4cbd2','#c9b3d6','#ffe49b'];
+export const DECOR=[...['banana','dragonfruit','mango','kiwi','letter'].map(id=>({id,name:id})),{id:'strawberry',name:'半颗草莓',cell:1},{id:'cherry',name:'樱桃',cell:2},{id:'bunny',name:'毛毡小兔',cell:0},{id:'bow',name:'蝴蝶结',cell:3},{id:'candle',name:'生日蜡烛',cell:4},{id:'star',name:'小星星',cell:-1},{id:'blueberry',name:'蓝莓',cell:-2},{id:'plaque',name:'名字牌',cell:-3}];
+export function initialState(){return {v:2,song:'party',tilt:0,roll:0,banner:'flags',dark:false,stars:[],sprinkles:[],layers:['vanilla','vanilla'],fillings:['strawberry'],creamColor:CREAMS[0],coat:false,coatColor:CREAMS[0],strokes:[],pipes:[],decor:[],rotation:-.28,collage:[],background:'paper',recipient:'亲爱的你',sender:'',message:'愿你新的一岁，\n有甜甜的日子，也有闪闪发光的自己。',title:'今天，所有的甜都属于你。'};}
+export const cakeHeight=s=>s.layers.length*.47+(s.layers.length-1)*.13;
+export const clone=s=>JSON.parse(JSON.stringify(s));
+export function normalize(input){
+ const d=initialState();if(!input||typeof input!=='object')return d;
+ const ids=SPONGES.map(x=>x.id), fids=FILLINGS.map(x=>x.id);
+ const validColor=c=>typeof c==='string'&&/^#[\da-fA-F]{6}$/.test(c);
+ const num=(v,min,max,fall=0)=>Number.isFinite(v)?Math.max(min,Math.min(max,v)):fall;
+ const pos=p=>p&&['x','y','z'].every(k=>Number.isFinite(p[k]));
+ d.layers=Array.isArray(input.layers)&&input.layers.length?input.layers.slice(0,3).map(x=>ids.includes(x)?x:'vanilla'):d.layers;
+ d.fillings=Array.from({length:d.layers.length-1},(_,i)=>fids.includes(input.fillings?.[i])?input.fillings[i]:'cream');
+ d.creamColor=validColor(input.creamColor)?input.creamColor:d.creamColor;d.coat=!!input.coat;d.coatColor=validColor(input.coatColor)?input.coatColor:d.creamColor;d.rotation=num(input.rotation,-10000,10000);d.tilt=num(input.tilt,-.42,.72);d.roll=0;d.song=input.song==='classic'?'classic':'party';d.dark=!!input.dark;d.banner=['none','flags','letters','ribbon'].includes(input.banner)?input.banner:'flags';d.stars=(Array.isArray(input.stars)?input.stars:[]).slice(0,80).map(p=>({x:num(p.x,2,98,50),y:num(p.y,2,98,30),size:num(p.size,8,40,16)}));
+ for(const k of ['recipient','sender','message','title'])if(typeof input[k]==='string')d[k]=input[k].slice(0,k==='message'?2000:60);
+ d.background=['gingham','paper','blue','rose'].includes(input.background)?input.background:'paper';
+ d.pipes=(Array.isArray(input.pipes)?input.pipes:[]).slice(0,1600).filter(p=>pos(p)&&validColor(p.color)).map(p=>({color:p.color,x:num(p.x,-2,2),z:num(p.z,-2,2),y:num(p.y,0,3),shape:num(p.shape,0,5),size:num(p.size,.02,.3,.1),normal:p.normal==='side'?'side':'top'}));
+ d.decor=(Array.isArray(input.decor)?input.decor:[]).slice(0,70).filter(x=>DECOR.some(k=>k.id===x.kind)&&pos(x)).map((x,i)=>({kind:x.kind,id:'d'+i,scale:num(x.scale,.4,2,1),color:validColor(x.color)?x.color:'#f2adc5',text:typeof x.text==='string'?x.text.slice(0,2):'A',lit:!!x.lit,angle:num(x.angle,-10,10),x:num(x.x,-1.6,1.6),z:num(x.z,-1.6,1.6),y:num(x.y,0,3)}));
+ d.strokes=(Array.isArray(input.strokes)?input.strokes:[]).slice(0,150).filter(x=>validColor(x.color)&&Array.isArray(x.points)).map(s=>({surface:s.surface==='side'?'side':'top',color:s.color,size:num(s.size,.01,.2,.055),points:s.points.slice(0,1500).filter(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)).map(p=>p.map(v=>num(v,0,1)))}));
+ d.sprinkles=(Array.isArray(input.sprinkles)?input.sprinkles:[]).slice(0,2200).filter(p=>pos(p)&&validColor(p.color)).map(p=>({x:num(p.x,-2,2),y:num(p.y,0,3),z:num(p.z,-2,2),color:p.color,kind:num(p.kind,0,5),angle:num(p.angle,-10,10),size:num(p.size,.02,.12,.04),normal:p.normal==='side'?'side':'top'}));
+ d.collage=(Array.isArray(input.collage)?input.collage:[]).slice(0,24).filter(x=>x?.asset!=='pretty-2-0').filter(x=>['bunny','bow','cherry','strawberry','note','text','photo','stamp','lace','asset','envelope'].includes(x.kind)).map((x,i)=>({id:'s'+i,kind:x.kind,asset:typeof x.asset==='string'&&/^(pretty|paper)-[0-2]-[0-5]$/.test(x.asset)?x.asset:'',frame:num(x.frame,0,5),x:num(x.x,4,96,20),y:num(x.y,5,95,30),size:num(x.size,65,260,130),angle:num(x.angle,-180,180),text:typeof x.text==='string'?x.text.slice(0,120):'',src:x.kind==='photo'&&typeof x.src==='string'&&/^data:image\/(png|jpeg|webp);base64,/.test(x.src)&&x.src.length<1500000?x.src:''}));
+ return d;
+}
+export class History {constructor(){this.past=[];this.future=[];} checkpoint(s){this.past.push(clone(s));while(this.past.length>16||this.past.length>1&&JSON.stringify(this.past).length>12000000)this.past.shift();this.future=[];} undo(s){if(!this.past.length)return null;this.future.push(clone(s));return this.past.pop();} redo(s){if(!this.future.length)return null;this.past.push(clone(s));return this.future.pop();}}
+export function escapeJSON(value){return JSON.stringify(value).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');}

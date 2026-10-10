@@ -8,7 +8,7 @@ test('recipe roundtrip preserves paint, toppings and card',()=>{
 });
 test('invalid imported fields cannot create external photos or unbounded objects',()=>{
  const n=normalize({layers:['bad','cocoa','matcha','vanilla'],decor:[{kind:'evil',x:0,y:0,z:0},{kind:'bunny',x:999,y:1,z:0,scale:Infinity}],pipes:[{x:NaN,y:1,z:0,color:'#ffffff'}],collage:[{kind:'photo',src:'https://example.com/private.png',x:-50,y:400,size:9999}],background:'url(https://example.com)'});
- assert.deepEqual(n.layers,['vanilla','cocoa','matcha']);assert.equal(n.decor.length,1);assert.equal(n.decor[0].x,1.6);assert.equal(n.decor[0].scale,1);assert.equal(n.pipes.length,0);assert.equal(n.collage[0].src,'');assert.equal(n.collage[0].size,260);assert.equal(n.background,'paper');
+ assert.deepEqual(n.layers,['vanilla','cocoa','matcha']);assert.equal(n.decor.length,1);assert.equal(n.decor[0].x,1.6);assert.equal(n.decor[0].scale,1);assert.equal(n.pipes.length,0);assert.equal(n.collage[0].src,'');assert.equal(n.collage[0].size,360);assert.equal(n.background,'paper');
 });
 test('undo/redo deeply restores hand-applied cream and resets redo branch',()=>{
  const h=new History(),s=initialState();h.checkpoint(s);s.strokes.push({color:'#e9a7b5',surface:'top',size:.05,points:[[.2,.3]]});const previous=h.undo(s);assert.equal(previous.strokes.length,0);const next=h.redo(previous);assert.deepEqual(next.strokes[0].points,[[.2,.3]]);h.undo(next);h.checkpoint(previous);assert.equal(h.redo(previous),null);
@@ -26,3 +26,10 @@ test('full birthday gift survives normalization with photo, music, dark room and
 test('retired white daisy is removed from saved works and camera cannot flip the tray',()=>{
  const n=normalize({tilt:3.14,roll:2,collage:[{kind:'asset',asset:'pretty-2-0',x:20,y:20},{kind:'asset',asset:'pretty-2-1',x:20,y:20}]});assert.equal(n.collage.length,1);assert.equal(n.collage[0].asset,'pretty-2-1');assert.equal(n.tilt,.72);assert.equal(n.roll,0);
 });
+
+test('tiered demo roundtrip keeps tier placement and reusable photo templates',async()=>{
+ const {makeDemo}=await import('../demo.mjs');const {cakeTiers,surfaceHeight}=await import('../model.mjs');const s=makeDemo(),n=normalize(JSON.parse(JSON.stringify(s)));assert.equal(n.layout,'tiered');assert.equal(cakeHeight(n),2.16);assert.equal(cakeTiers(n).length,3);assert.equal(surfaceHeight(n,1.5,0),.72);assert.equal(n.pipes.length,s.pipes.length);assert.equal(n.decor.filter(d=>d.kind==='candle').length,5);assert.deepEqual(n.collage.filter(c=>c.kind==='photo').map(c=>c.frame),[6,7]);
+ const five=normalize({...s,layers:['vanilla','cocoa','matcha','taro','strawberry'],strokes:[{tier:4,surface:'side',color:'#ffffff',points:[[.5,.5]]}],collage:[{kind:'photo',frame:8,src:'data:image/jpeg;base64,AA',photos:['','data:image/png;base64,BB','https://untrusted.example/x'],templateSrc:'file:///private/photo'}]});assert.equal(five.layers.length,5);assert.equal(five.strokes[0].tier,4);assert.equal(five.collage[0].photos[1],'data:image/png;base64,BB');assert.equal(five.collage[0].photos[2],'');assert.equal(five.collage[0].templateSrc,'');
+});
+
+test('demo decorations sit on the visible tier ledges',async()=>{const {makeDemo}=await import('../demo.mjs');const {surfaceHeight}=await import('../model.mjs');const s=makeDemo();for(const d of s.decor)assert.ok(Math.abs(surfaceHeight(s,d.x,d.z)-(d.y-.025))<.001,d.kind+' is inside another tier');});

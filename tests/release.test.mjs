@@ -20,3 +20,7 @@ test('unowned output and invalid build remain untouched',async()=>{
 test('release preserves previous generated output before atomic replacement',async()=>{
  const root=await fixture();await writeRelease(root,good);await writeRelease(root,good+'new');assert.equal(await fs.readFile(path.join(root,outputName),'utf8'),good+'new');const backup=(await fs.readdir(root)).find(n=>n.includes('.previous-'));assert.equal(await fs.readFile(path.join(root,backup),'utf8'),good);
 });
+
+test('named workshop output allows only the two owned filenames',async()=>{
+ const root=await fixture();for(const name of ['.','..','/','~','../test.html','/tmp/test.html','unknown.html','--force'])await assert.rejects(writeRelease(root,good,name));assert.deepEqual(await fs.readdir(root),[]);await writeRelease(root,good,'手作生日蛋糕.html');assert.equal(await fs.readFile(path.join(root,'手作生日蛋糕.html'),'utf8'),good);
+});

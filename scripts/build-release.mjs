@@ -13,4 +13,5 @@ for(const [key,name]of [['songParty','its-your-birthday.mp3'],['songClassic','ha
 const note=(license+'\n\n'+notices).replaceAll('--','—');
 const html='<!doctype html>'+marker+'<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一点甜 · 生日蛋糕工坊</title><!-- Sherry小水 · https://github.com/XshuiAi/shui-birthday-cake\n'+note+'\nThree.js https://threejs.org/\n'+threeLicense+' --><style id="app-style">'+css+'</style><div id="app"></div><script>window.__CAKE_ASSETS__='+escapeJSON(assets)+';</script><script id="app-bundle" type="module">'+js.replace(/<\/script/gi,'<\\/script')+'</script></html>';
 await writeRelease(root,html);
+await writeRelease(root,html.replace('<title>一点甜 · 生日蛋糕工坊</title>','<title>手作生日蛋糕</title>'),'手作生日蛋糕.html');
 console.log('Built standalone workshop',Math.round(Buffer.byteLength(html)/1024/1024*10)/10,'MB');
